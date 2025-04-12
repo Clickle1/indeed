@@ -45,6 +45,7 @@ async function main() {
                         '--window-size=1920,1080',
                         '--disable-web-security',
                         '--disable-features=IsolateOrigins,site-per-process',
+                        '--disable-blink-features=AutomationControlled',
                     ],
                 } as LaunchOptions,
             },
@@ -52,7 +53,11 @@ async function main() {
             preNavigationHooks: [
                 async (crawlingContext) => {
                     const { page } = crawlingContext;
+                    
+                    // Set a modern user agent
                     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+                    
+                    // Set headers to look more like a regular browser
                     await page.setExtraHTTPHeaders({
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
                         'Accept-Language': 'en-US,en;q=0.5',
@@ -64,8 +69,25 @@ async function main() {
                         'Sec-Fetch-Site': 'none',
                         'Sec-Fetch-User': '?1',
                     });
-                    // Add a delay between requests
-                    await new Promise(resolve => setTimeout(resolve, 15000));
+
+                    // Add a random delay between 5-15 seconds
+                    const delay = Math.floor(Math.random() * 10000) + 5000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+
+                    // Check for CAPTCHA after navigation
+                    await page.waitForNavigation({ waitUntil: 'networkidle0' });
+                    
+                    // Check if we're on a CAPTCHA page
+                    const isCaptcha = await page.evaluate(() => {
+                        return document.querySelector('form[action*="verify"]') !== null ||
+                               document.querySelector('iframe[src*="captcha"]') !== null ||
+                               document.querySelector('div[class*="captcha"]') !== null;
+                    });
+
+                    if (isCaptcha) {
+                        console.log('CAPTCHA detected. Please solve it manually or use a different approach.');
+                        throw new Error('CAPTCHA detected');
+                    }
                 },
             ],
         });
