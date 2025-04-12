@@ -18,20 +18,12 @@ async function main() {
         // Construct the Indeed search URL
         const indeedUrl = `https://${input.country.toLowerCase()}.indeed.com/jobs?q=${encodeURIComponent(input.position)}&l=${encodeURIComponent(input.location)}`;
 
-        // Create a proxy configuration with default settings
-        const proxyConfiguration = await Actor.createProxyConfiguration();
-
-        if (!proxyConfiguration) {
-            throw new Error('Failed to create proxy configuration. Please check your Apify account settings.');
-        }
-
         // Create the crawler with specific configuration for Indeed
         const crawler = new PuppeteerCrawler({
-            proxyConfiguration,
             requestHandler: router,
             maxRequestsPerCrawl: input.maxItems,
-            maxConcurrency: 2, // Further reduced concurrency
-            maxRequestRetries: 2,
+            maxConcurrency: 1, // Single request at a time
+            maxRequestRetries: 1,
             browserPoolOptions: {
                 useFingerprints: true,
                 fingerprintOptions: {
@@ -47,7 +39,7 @@ async function main() {
                     const { page } = crawlingContext;
                     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
                     // Add a delay between requests
-                    await new Promise(resolve => setTimeout(resolve, 5000));
+                    await new Promise(resolve => setTimeout(resolve, 10000));
                 },
             ],
         });
