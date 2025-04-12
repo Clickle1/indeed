@@ -16,6 +16,18 @@ async function main() {
             throw new Error('Input is required. Please provide a valid input with position, country, and location.');
         }
 
+        // Initialize proxy configuration
+        const proxyConfiguration = await Actor.createProxyConfiguration({
+            groups: ['RESIDENTIAL'],
+            countryCode: 'US',
+        });
+
+        if (!proxyConfiguration) {
+            throw new Error('Failed to initialize proxy configuration');
+        }
+
+        console.log('Proxy configuration initialized successfully');
+
         // Construct the Indeed search URL using www.indeed.com
         const indeedUrl = `https://www.indeed.com/jobs?q=${encodeURIComponent(input.position)}&l=${encodeURIComponent(input.location)}`;
 
@@ -26,10 +38,7 @@ async function main() {
             maxConcurrency: 1,
             maxRequestRetries: 1,
             navigationTimeoutSecs: 60,
-            proxyConfiguration: await Actor.createProxyConfiguration({
-                groups: ['RESIDENTIAL'],
-                countryCode: 'US',
-            }),
+            proxyConfiguration,
             browserPoolOptions: {
                 useFingerprints: true,
                 fingerprintOptions: {
@@ -61,6 +70,9 @@ async function main() {
             preNavigationHooks: [
                 async (crawlingContext) => {
                     const { page, request } = crawlingContext;
+                    
+                    // Log that we're using a proxy
+                    console.log('Request is being made through proxy');
                     
                     // Set a modern user agent
                     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
@@ -102,6 +114,25 @@ async function main() {
 
                         // Wait for a short time to let any dynamic content load
                         await new Promise(resolve => setTimeout(resolve, 5000));
+
+                        // Check if we're on a Cloudflare verification page
+                        const isCloudflare = await page.evaluate(() => {
+                            return document.title.includes('Just a moment') ||
+                                   document.querySelector('div[id*="cf-content"]') !== null ||
+                                   document.querySelector('div[class*="cf-browser-verification"]') !== null;
+                        });
+
+                        if (isCloudflare) {
+                            console.log('Cloudflare verification page detected. Waiting for verification...');
+                            // Wait up to 30 seconds for Cloudflare to complete verification
+                            await page.waitForFunction(
+                                () => !document.title.includes('Just a moment'),
+                                { timeout: 30000 }
+                            ).catch(() => {
+                                console.log('Cloudflare verification timed out');
+                                throw new Error('Cloudflare verification failed');
+                            });
+                        }
 
                         // Check if we're on a CAPTCHA page
                         const isCaptcha = await page.evaluate(() => {
