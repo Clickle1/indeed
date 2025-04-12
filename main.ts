@@ -68,55 +68,63 @@ async function main() {
                 remote: false,
             };
 
-            // Try to extract from detailed view first
-            const detailedViewMatch = html.match(/<div class="jobsearch-FederatedViewJob">/);
+            // Check if we have the detailed view container
+            const detailedViewMatch = html.match(/<div[^>]*id="vjs-container"[^>]*>(.*?)<\/div>/);
             if (detailedViewMatch) {
-                console.log('Found detailed view structure');
+                console.log('Found detailed view container');
+                const detailedView = detailedViewMatch[1];
+
                 // Extract title from detailed view
-                const titleMatch = html.match(/<h2[^>]*class="jobsearch-JobInfoHeader-title"[^>]*>(.*?)<\/h2>/);
+                const titleMatch = detailedView.match(/<h2[^>]*class="jobsearch-JobInfoHeader-title"[^>]*>(.*?)<\/h2>/);
                 if (titleMatch) {
                     jobData.title = titleMatch[1].replace(/<span[^>]*>.*?<\/span>/g, '').trim();
                 }
 
                 // Extract company from detailed view
-                const companyMatch = html.match(/<div[^>]*data-company-name="true"[^>]*>(.*?)<\/div>/);
+                const companyMatch = detailedView.match(/<div[^>]*data-company-name="true"[^>]*>(.*?)<\/div>/);
                 if (companyMatch) {
                     jobData.company = companyMatch[1].trim();
                 }
 
                 // Extract location from detailed view
-                const locationMatch = html.match(/<div[^>]*data-testid="inlineHeader-companyLocation"[^>]*>(.*?)<\/div>/);
+                const locationMatch = detailedView.match(/<div[^>]*data-testid="inlineHeader-companyLocation"[^>]*>(.*?)<\/div>/);
                 if (locationMatch) {
                     jobData.location = locationMatch[1].replace(/<span[^>]*>.*?<\/span>/g, '').trim();
                 }
 
                 // Extract salary from detailed view
-                const salaryMatch = html.match(/<div[^>]*data-testid="£[^"]*-tile"[^>]*>(.*?)<\/div>/);
+                const salaryMatch = detailedView.match(/<div[^>]*data-testid="£[^"]*-tile"[^>]*>(.*?)<\/div>/);
                 if (salaryMatch) {
                     jobData.salary = salaryMatch[1].replace(/<[^>]*>/g, '').trim();
                 }
 
                 // Extract job type from detailed view
-                const jobTypeMatch = html.match(/<div[^>]*data-testid="[^"]*-tile"[^>]*>(.*?)<\/div>/g);
+                const jobTypeMatch = detailedView.match(/<div[^>]*data-testid="[^"]*-tile"[^>]*>(.*?)<\/div>/g);
                 if (jobTypeMatch && jobTypeMatch.length > 1) {
                     jobData.jobType = jobTypeMatch[1].replace(/<[^>]*>/g, '').trim();
                 }
 
                 // Extract description from detailed view
-                const descriptionMatch = html.match(/<div[^>]*id="jobDescriptionText"[^>]*>(.*?)<\/div>/);
+                const descriptionMatch = detailedView.match(/<div[^>]*id="jobDescriptionText"[^>]*>(.*?)<\/div>/);
                 if (descriptionMatch) {
                     jobData.description = descriptionMatch[1].trim();
                 }
 
                 // Extract company rating from detailed view
-                const ratingMatch = html.match(/<span[^>]*aria-hidden="true"[^>]*>(.*?)<\/span>/);
+                const ratingMatch = detailedView.match(/<span[^>]*aria-hidden="true"[^>]*>(.*?)<\/span>/);
                 if (ratingMatch) {
                     jobData.companyRating = ratingMatch[1].trim();
                 }
 
                 // Check for remote status
-                if (html.includes('Remote') || html.includes('remote')) {
+                if (detailedView.includes('Remote') || detailedView.includes('remote') || detailedView.includes('Work from home')) {
                     jobData.remote = true;
+                }
+
+                // Extract apply URL
+                const applyMatch = detailedView.match(/<button[^>]*href="([^"]*)"[^>]*>Apply now<\/button>/);
+                if (applyMatch) {
+                    jobData.applyUrl = applyMatch[1];
                 }
             } else {
                 console.log('Using job card structure');
@@ -246,7 +254,7 @@ async function main() {
                 const newProxyUrl = await proxyConfiguration?.newUrl();
                 console.log('Using new proxy URL:', newProxyUrl);
                 
-                // Retry the request with new proxy
+                // Retry the request with new proxy and more browser-like headers
                 const retryResponse = await gotScraping.get(url, {
                     proxyUrl: newProxyUrl,
                     headers: {
