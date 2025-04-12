@@ -2,6 +2,7 @@ import { Actor } from 'apify';
 import { PuppeteerCrawler } from 'crawlee';
 import { router } from './routes.js';
 import { IndeedInput } from './types.js';
+import type { LaunchOptions } from 'puppeteer';
 
 async function main() {
     try {
@@ -35,7 +36,6 @@ async function main() {
             },
             launchContext: {
                 launchOptions: {
-                    headless: true,
                     args: [
                         '--no-sandbox',
                         '--disable-setuid-sandbox',
@@ -46,7 +46,7 @@ async function main() {
                         '--disable-web-security',
                         '--disable-features=IsolateOrigins,site-per-process',
                     ],
-                },
+                } as LaunchOptions,
             },
             // Add a preNavigation hook to handle cookies and other pre-request setup
             preNavigationHooks: [
