@@ -17,9 +17,9 @@ async function main() {
     // Construct the Indeed search URL
     const indeedUrl = `https://${input.country.toLowerCase()}.indeed.com/jobs?q=${encodeURIComponent(input.position)}&l=${encodeURIComponent(input.location)}`;
 
-    // Create a proxy configuration
+    // Create a proxy configuration with fallback options
     const proxyConfiguration = await Actor.createProxyConfiguration({
-        groups: ['RESIDENTIAL'],
+        groups: ['RESIDENTIAL', 'BUYPROXIES94952'],
         countryCode: input.country,
     });
 
@@ -29,6 +29,7 @@ async function main() {
         requestHandler: router,
         maxRequestsPerCrawl: input.maxItems,
         maxConcurrency: 5, // Limit concurrent requests to avoid overwhelming the server
+        maxRequestRetries: 3, // Limit retries to avoid infinite loops
         browserPoolOptions: {
             useFingerprints: true,
             fingerprintOptions: {
@@ -44,7 +45,7 @@ async function main() {
                 const { page } = crawlingContext;
                 await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
                 // Add a delay between requests
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 2000));
             },
         ],
     });
