@@ -35,21 +35,21 @@
             "title": "Parse Company Details",
             "type": "boolean",
             "description": "Whether to parse company details",
-            "editor": "boolean",
+            "editor": "checkbox",
             "default": false
         },
         "saveOnlyUniqueItems": {
             "title": "Save Only Unique Items",
             "type": "boolean",
             "description": "Whether to save only unique items",
-            "editor": "boolean",
+            "editor": "checkbox",
             "default": true
         },
         "followApplyRedirects": {
             "title": "Follow Apply Redirects",
             "type": "boolean",
             "description": "Whether to follow apply redirects",
-            "editor": "boolean",
+            "editor": "checkbox",
             "default": false
         }
     },
