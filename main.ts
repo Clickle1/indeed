@@ -17,7 +17,12 @@ async function main() {
         const input = await Actor.getInput<Input>();
         console.log('Input received:', input);
         
-        const { searchQuery = 'web developer', location = 'London', maxPages = 5 } = input ?? {};
+        const { 
+            searchQuery = 'web developer', 
+            location = 'London', 
+            maxPages = 5
+        } = input ?? {};
+
         console.log('Using parameters:', { searchQuery, location, maxPages });
 
         // Initialize proxy configuration
@@ -45,6 +50,14 @@ async function main() {
                 salary: '',
                 description: '',
                 url: '',
+                applyUrl: '',
+                companyUrl: '',
+                companyDescription: '',
+                companyRating: '',
+                companyReviews: '',
+                jobType: '',
+                postedDate: '',
+                remote: false,
             };
 
             // Extract title
@@ -77,6 +90,48 @@ async function main() {
                 jobData.description = descriptionMatch[1].trim();
             }
 
+            // Extract job type
+            const jobTypeMatch = html.match(/<div[^>]*data-testid="job-type"[^>]*>(.*?)<\/div>/);
+            if (jobTypeMatch) {
+                jobData.jobType = jobTypeMatch[1].trim();
+            }
+
+            // Extract posted date
+            const postedDateMatch = html.match(/<div[^>]*data-testid="job-posted-date"[^>]*>(.*?)<\/div>/);
+            if (postedDateMatch) {
+                jobData.postedDate = postedDateMatch[1].trim();
+            }
+
+            // Extract remote status
+            const remoteMatch = html.match(/<div[^>]*data-testid="remote-job"[^>]*>(.*?)<\/div>/);
+            if (remoteMatch) {
+                jobData.remote = true;
+            }
+
+            // Extract apply URL
+            const applyUrlMatch = html.match(/<a[^>]*data-testid="apply-button"[^>]*href="([^"]*)"[^>]*>/);
+            if (applyUrlMatch) {
+                jobData.applyUrl = new URL(applyUrlMatch[1], 'https://uk.indeed.com').toString();
+            }
+
+            // Extract company URL
+            const companyUrlMatch = html.match(/<a[^>]*data-testid="company-link"[^>]*href="([^"]*)"[^>]*>/);
+            if (companyUrlMatch) {
+                jobData.companyUrl = new URL(companyUrlMatch[1], 'https://uk.indeed.com').toString();
+            }
+
+            // Extract company rating
+            const companyRatingMatch = html.match(/<div[^>]*data-testid="company-rating"[^>]*>(.*?)<\/div>/);
+            if (companyRatingMatch) {
+                jobData.companyRating = companyRatingMatch[1].trim();
+            }
+
+            // Extract company reviews
+            const companyReviewsMatch = html.match(/<div[^>]*data-testid="company-reviews"[^>]*>(.*?)<\/div>/);
+            if (companyReviewsMatch) {
+                jobData.companyReviews = companyReviewsMatch[1].trim();
+            }
+
             console.log('Extracted job data:', jobData);
             return jobData;
         }
@@ -85,11 +140,23 @@ async function main() {
         function extractJobLinks(html: string) {
             console.log('Extracting job links from HTML');
             const jobLinks: string[] = [];
-            const regex = /<a[^>]*data-jk="([^"]*)"[^>]*>/g;
-            let match;
+            
+            // Try different patterns for job links
+            const patterns = [
+                /<a[^>]*data-jk="([^"]*)"[^>]*>/g,
+                /<a[^>]*href="\/jobs\/view\?jk=([^"]*)"[^>]*>/g,
+                /<a[^>]*href="\/rc\/clk\?jk=([^"]*)"[^>]*>/g
+            ];
 
-            while ((match = regex.exec(html)) !== null) {
-                jobLinks.push(`https://uk.indeed.com/viewjob?jk=${match[1]}`);
+            for (const pattern of patterns) {
+                let match;
+                while ((match = pattern.exec(html)) !== null) {
+                    const jobId = match[1];
+                    const jobUrl = `https://uk.indeed.com/viewjob?jk=${jobId}`;
+                    if (!jobLinks.includes(jobUrl)) {
+                        jobLinks.push(jobUrl);
+                    }
+                }
             }
 
             console.log(`Found ${jobLinks.length} job links`);
@@ -99,12 +166,21 @@ async function main() {
         // Function to extract next page URL
         function extractNextPageUrl(html: string): string | null {
             console.log('Extracting next page URL');
-            const nextPageMatch = html.match(/<a[^>]*data-testid="pagination-page-next"[^>]*href="([^"]*)"[^>]*>/);
-            if (nextPageMatch) {
-                const nextUrl = new URL(nextPageMatch[1], 'https://uk.indeed.com').toString();
-                console.log('Next page URL:', nextUrl);
-                return nextUrl;
+            const patterns = [
+                /<a[^>]*data-testid="pagination-page-next"[^>]*href="([^"]*)"[^>]*>/,
+                /<a[^>]*aria-label="Next Page"[^>]*href="([^"]*)"[^>]*>/,
+                /<a[^>]*rel="next"[^>]*href="([^"]*)"[^>]*>/
+            ];
+
+            for (const pattern of patterns) {
+                const nextPageMatch = html.match(pattern);
+                if (nextPageMatch) {
+                    const nextUrl = new URL(nextPageMatch[1], 'https://uk.indeed.com').toString();
+                    console.log('Next page URL:', nextUrl);
+                    return nextUrl;
+                }
             }
+
             console.log('No next page URL found');
             return null;
         }
@@ -114,6 +190,7 @@ async function main() {
             console.log('Starting job scraping');
             let currentPage = 1;
             let currentUrl: string | null = searchUrl;
+            let totalItems = 0;
 
             while (currentPage <= maxPages && currentUrl) {
                 try {
@@ -199,6 +276,10 @@ async function main() {
                             console.log('Saving job data to dataset');
                             await Dataset.pushData(jobData);
                             console.log('Job data saved successfully');
+                            
+                            totalItems++;
+                            console.log(`Total items processed: ${totalItems}`);
+
                         } catch (error) {
                             console.error(`Error processing job ${jobUrl}:`, error);
                         }
