@@ -199,31 +199,27 @@ async function main() {
         }
 
         // Function to extract next page URL
-        function extractNextPageUrl(html: string): string | null {
-            console.log('Extracting next page URL');
-            const patterns = [
-                /<a[^>]*aria-label="Next Page"[^>]*href="([^"]*)"[^>]*>/,
-                /<a[^>]*class="pagination-next"[^>]*href="([^"]*)"[^>]*>/,
-                /<a[^>]*class="np"[^>]*href="([^"]*)"[^>]*>/,
-                /<a[^>]*data-testid="pagination-page-next"[^>]*href="([^"]*)"[^>]*>/,
-                /<a[^>]*class="pagination-list"[^>]*href="([^"]*)"[^>]*>/,
-                /<a[^>]*class="pagination-link"[^>]*href="([^"]*)"[^>]*>/
-            ];
-
-            for (const pattern of patterns) {
-                const nextPageMatch = html.match(pattern);
-                if (nextPageMatch) {
-                    let nextUrl = nextPageMatch[1];
-                    if (!nextUrl.startsWith('http')) {
-                        nextUrl = `https://uk.indeed.com${nextUrl}`;
-                    }
-                    console.log('Next page URL:', nextUrl);
-                    return nextUrl;
-                }
+        function getNextPageUrl(currentUrl: string, currentPage: number): string | null {
+            console.log('Getting next page URL');
+            if (currentPage >= 10) {
+                console.log('Reached maximum page limit');
+                return null;
             }
 
-            console.log('No next page URL found');
-            return null;
+            // Extract the base URL and parameters
+            const url = new URL(currentUrl);
+            const searchParams = new URLSearchParams(url.search);
+            
+            // Update the start parameter
+            const start = (currentPage - 1) * 10;
+            searchParams.set('start', start.toString());
+            
+            // Reconstruct the URL
+            url.search = searchParams.toString();
+            const nextUrl = url.toString();
+            
+            console.log('Next page URL:', nextUrl);
+            return nextUrl;
         }
 
         // Function to handle Cloudflare challenges
@@ -357,9 +353,15 @@ async function main() {
 
                     // Extract job links
                     const jobLinks = extractJobLinks(html);
+                    console.log(`Found ${jobLinks.length} job links`);
 
                     // Process each job link
                     for (const jobUrl of jobLinks) {
+                        if (totalItems >= maxItems) {
+                            console.log('Reached maximum items limit');
+                            break;
+                        }
+
                         try {
                             console.log(`Processing job: ${jobUrl}`);
                             
@@ -373,9 +375,9 @@ async function main() {
                             const jobResponse = await gotScraping.get(jobUrl, {
                                 proxyUrl,
                                 headers: {
-                                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-                                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                                    'Accept-Language': 'en-GB,en;q=0.5',
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                                    'Accept-Language': 'en-GB,en;q=0.9',
                                     'Accept-Encoding': 'gzip, deflate, br',
                                     'Connection': 'keep-alive',
                                     'Upgrade-Insecure-Requests': '1',
@@ -385,6 +387,18 @@ async function main() {
                                     'Sec-Fetch-User': '?1',
                                     'Cache-Control': 'max-age=0',
                                     'DNT': '1',
+                                    'sec-ch-ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+                                    'sec-ch-ua-mobile': '?0',
+                                    'sec-ch-ua-platform': '"Windows"',
+                                    'Sec-CH-UA': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+                                    'Sec-CH-UA-Mobile': '?0',
+                                    'Sec-CH-UA-Platform': '"Windows"',
+                                    'Sec-CH-UA-Bitness': '"64"',
+                                    'Sec-CH-UA-Arch': '"x86"',
+                                    'Sec-CH-UA-Full-Version': '"122.0.0.0"',
+                                    'Sec-CH-UA-Full-Version-List': '"Chromium";v="122.0.0.0", "Not(A:Brand";v="24.0.0.0", "Google Chrome";v="122.0.0.0"',
+                                    'Sec-CH-UA-Model': '""',
+                                    'Sec-CH-UA-Platform-Version': '"10.0.0"'
                                 },
                                 timeout: {
                                     request: 30000
@@ -408,8 +422,8 @@ async function main() {
                         }
                     }
 
-                    // Get next page URL
-                    currentUrl = extractNextPageUrl(html);
+                    // Get next page URL using start parameter
+                    currentUrl = getNextPageUrl(currentUrl, currentPage + 1);
                     currentPage++;
 
                 } catch (error) {
