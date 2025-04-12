@@ -2,15 +2,16 @@
   "name": "indeed-scraper",
   "version": "1.0.0",
   "description": "A web scraper for Indeed.com job listings",
-  "main": "main.ts",
+  "main": "dist/main.js",
   "scripts": {
-    "start": "ts-node main.ts",
-    "build": "tsc"
+    "start": "node dist/main.js",
+    "build": "tsc",
+    "dev": "ts-node main.ts"
   },
   "dependencies": {
     "apify": "^3.0.0",
     "crawlee": "^3.0.0",
-    "puppeteer": "^24.6.1"
+    "puppeteer": "^19.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
