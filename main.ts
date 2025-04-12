@@ -14,7 +14,7 @@ async function main() {
         }
 
         const input = await Actor.getInput<Input>();
-        const { searchQuery = 'web developer', location = 'San Francisco', maxPages = 5 } = input ?? {};
+        const { searchQuery = 'web developer', location = 'London', maxPages = 5 } = input ?? {};
 
         // Initialize proxy configuration
         const proxyConfiguration = await Actor.createProxyConfiguration({
@@ -28,7 +28,7 @@ async function main() {
         console.log('Proxy configuration initialized successfully');
 
         // Create a URL for the search
-        const searchUrl = `https://www.indeed.com/jobs?q=${encodeURIComponent(searchQuery)}&l=${encodeURIComponent(location)}`;
+        const searchUrl = `https://uk.indeed.com/jobs?q=${encodeURIComponent(searchQuery)}&l=${encodeURIComponent(location)}`;
 
         // Initialize the crawler
         const crawler = new PuppeteerCrawler({
@@ -71,7 +71,7 @@ async function main() {
                     // Set headers to look more like a regular browser
                     await page.setExtraHTTPHeaders({
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Accept-Language': 'en-GB,en;q=0.5',
                         'Accept-Encoding': 'gzip, deflate, br',
                         'Connection': 'keep-alive',
                         'Upgrade-Insecure-Requests': '1',
@@ -88,13 +88,19 @@ async function main() {
                     await new Promise(resolve => setTimeout(resolve, delay));
 
                     // First visit the homepage to get cookies
-                    await page.goto('https://www.indeed.com', {
+                    await page.goto('https://uk.indeed.com', {
                         waitUntil: ['domcontentloaded'],
                         timeout: 30000
                     });
 
                     // Wait a bit before going to the search page
                     await new Promise(resolve => setTimeout(resolve, 3000));
+
+                    // Set viewport and scroll to look more human-like
+                    await page.setViewport({ width: 1920, height: 1080 });
+                    await page.evaluate(() => {
+                        window.scrollTo(0, Math.random() * 100);
+                    });
                 }
             ],
             async requestHandler({ page, request, log }) {
@@ -116,7 +122,7 @@ async function main() {
                     // Extract job links
                     const jobLinks = await page.evaluate(() => {
                         return Array.from(document.querySelectorAll('a[data-jk]'))
-                            .map(el => `https://www.indeed.com/viewjob?jk=${el.getAttribute('data-jk')}`);
+                            .map(el => `https://uk.indeed.com/viewjob?jk=${el.getAttribute('data-jk')}`);
                     });
 
                     // Add job detail pages to the queue
@@ -129,7 +135,7 @@ async function main() {
                     });
 
                     if (nextPage) {
-                        const nextPageUrl = new URL(nextPage, 'https://www.indeed.com').toString();
+                        const nextPageUrl = new URL(nextPage, 'https://uk.indeed.com').toString();
                         await crawler.addRequests([nextPageUrl]);
                     }
                 } 
