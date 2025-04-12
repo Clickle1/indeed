@@ -12,7 +12,9 @@
   "dependencies": {
     "apify": "^3.0.0",
     "crawlee": "^3.0.0",
-    "puppeteer": "^22.8.1"
+    "puppeteer": "^22.8.1",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

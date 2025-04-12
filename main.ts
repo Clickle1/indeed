@@ -4,6 +4,13 @@ import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { ProxyConfiguration } from '@crawlee/browser';
 
+// Add type declarations
+declare module 'puppeteer-extra' {
+    interface HTTPRequest {
+        continue(options?: { headers?: Record<string, string> }): Promise<void>;
+    }
+}
+
 // Add stealth plugin
 puppeteer.use(StealthPlugin());
 
@@ -46,7 +53,7 @@ async function scrapeJobs(position: string, location: string, maxItems: number =
         
         // Set up request interception
         await page.setRequestInterception(true);
-        page.on('request', (request) => {
+        page.on('request', async (request) => {
             const headers = {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
@@ -60,7 +67,7 @@ async function scrapeJobs(position: string, location: string, maxItems: number =
                 'Sec-Fetch-User': '?1',
                 'Cache-Control': 'max-age=0',
             };
-            request.continue({ headers });
+            await request.continue({ headers });
         });
 
         const searchUrl = `https://uk.indeed.com/jobs?q=${encodeURIComponent(position)}&l=${encodeURIComponent(location)}`;
