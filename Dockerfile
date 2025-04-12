@@ -1,8 +1,5 @@
 FROM apify/actor-node-puppeteer-chrome:20
 
-# Install global dependencies
-RUN sudo npm install -g typescript
-
 # Copy package files
 COPY package*.json ./
 
