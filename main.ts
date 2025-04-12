@@ -26,6 +26,10 @@ async function main() {
             maxConcurrency: 1,
             maxRequestRetries: 1,
             navigationTimeoutSecs: 60,
+            proxyConfiguration: await Actor.createProxyConfiguration({
+                groups: ['RESIDENTIAL'],
+                countryCode: 'US',
+            }),
             browserPoolOptions: {
                 useFingerprints: true,
                 fingerprintOptions: {
@@ -73,6 +77,7 @@ async function main() {
                         'Sec-Fetch-Site': 'none',
                         'Sec-Fetch-User': '?1',
                         'Cache-Control': 'max-age=0',
+                        'DNT': '1',
                     });
 
                     // Add a random delay between 5-15 seconds
@@ -80,7 +85,16 @@ async function main() {
                     await new Promise(resolve => setTimeout(resolve, delay));
 
                     try {
-                        // Use a more lenient navigation strategy
+                        // First visit the homepage to get cookies
+                        await page.goto('https://www.indeed.com', {
+                            waitUntil: ['domcontentloaded'],
+                            timeout: 30000
+                        });
+
+                        // Wait a bit before going to the search page
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+
+                        // Now go to the search page
                         await page.goto(request.url, {
                             waitUntil: ['domcontentloaded', 'networkidle2'],
                             timeout: 60000
