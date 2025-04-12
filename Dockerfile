@@ -1,6 +1,6 @@
 FROM apify/actor-node:20
 
-# Install TypeScript globally
+# Install global dependencies
 RUN npm install -g typescript
 
 # Copy package files
@@ -15,5 +15,5 @@ COPY . ./
 # Build TypeScript
 RUN npm run build
 
-# Set the start command
+# Set the command to run the actor
 CMD ["npm", "start"] 
