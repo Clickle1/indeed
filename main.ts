@@ -302,6 +302,9 @@ async function main() {
                     // Get proxy URL
                     console.log('Getting proxy URL');
                     const proxyUrl = await proxyConfiguration?.newUrl();
+                    if (!proxyUrl) {
+                        throw new Error('Failed to get proxy URL');
+                    }
                     console.log('Using proxy URL:', proxyUrl);
 
                     // Make the request with got-scraping
