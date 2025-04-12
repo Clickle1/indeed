@@ -153,14 +153,28 @@ async function main() {
             const patterns = [
                 /<a[^>]*data-jk="([^"]*)"[^>]*>/g,
                 /<a[^>]*href="\/jobs\/view\?jk=([^"]*)"[^>]*>/g,
-                /<a[^>]*href="\/rc\/clk\?jk=([^"]*)"[^>]*>/g
+                /<a[^>]*href="\/rc\/clk\?jk=([^"]*)"[^>]*>/g,
+                /<a[^>]*href="\/pagead\/clk\?mo=([^"]*)"[^>]*>/g,
+                /<a[^>]*class="jcs-JobTitle"[^>]*href="([^"]*)"[^>]*>/g,
+                /<a[^>]*class="tapItem"[^>]*href="([^"]*)"[^>]*>/g
             ];
 
             for (const pattern of patterns) {
                 let match;
                 while ((match = pattern.exec(html)) !== null) {
-                    const jobId = match[1];
-                    const jobUrl = `https://uk.indeed.com/viewjob?jk=${jobId}`;
+                    let jobUrl;
+                    if (pattern.toString().includes('href="')) {
+                        // If we matched a full URL, use it directly
+                        jobUrl = match[1];
+                        if (!jobUrl.startsWith('http')) {
+                            jobUrl = `https://uk.indeed.com${jobUrl}`;
+                        }
+                    } else {
+                        // If we matched a job ID, construct the URL
+                        const jobId = match[1];
+                        jobUrl = `https://uk.indeed.com/viewjob?jk=${jobId}`;
+                    }
+                    
                     if (!jobLinks.includes(jobUrl)) {
                         jobLinks.push(jobUrl);
                     }
@@ -177,13 +191,19 @@ async function main() {
             const patterns = [
                 /<a[^>]*data-testid="pagination-page-next"[^>]*href="([^"]*)"[^>]*>/,
                 /<a[^>]*aria-label="Next Page"[^>]*href="([^"]*)"[^>]*>/,
-                /<a[^>]*rel="next"[^>]*href="([^"]*)"[^>]*>/
+                /<a[^>]*rel="next"[^>]*href="([^"]*)"[^>]*>/,
+                /<a[^>]*class="pagination-next"[^>]*href="([^"]*)"[^>]*>/,
+                /<a[^>]*class="np"[^>]*href="([^"]*)"[^>]*>/,
+                /<a[^>]*class="pagination-next"[^>]*href="([^"]*)"[^>]*>/
             ];
 
             for (const pattern of patterns) {
                 const nextPageMatch = html.match(pattern);
                 if (nextPageMatch) {
-                    const nextUrl = new URL(nextPageMatch[1], 'https://uk.indeed.com').toString();
+                    let nextUrl = nextPageMatch[1];
+                    if (!nextUrl.startsWith('http')) {
+                        nextUrl = `https://uk.indeed.com${nextUrl}`;
+                    }
                     console.log('Next page URL:', nextUrl);
                     return nextUrl;
                 }
