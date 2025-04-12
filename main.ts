@@ -16,8 +16,8 @@ async function main() {
             throw new Error('Input is required. Please provide a valid input with position, country, and location.');
         }
 
-        // Construct the Indeed search URL
-        const indeedUrl = `https://${input.country.toLowerCase()}.indeed.com/jobs?q=${encodeURIComponent(input.position)}&l=${encodeURIComponent(input.location)}`;
+        // Construct the Indeed search URL using www.indeed.com
+        const indeedUrl = `https://www.indeed.com/jobs?q=${encodeURIComponent(input.position)}&l=${encodeURIComponent(input.location)}`;
 
         // Create the crawler with specific configuration for Indeed
         const crawler = new PuppeteerCrawler({
@@ -25,7 +25,7 @@ async function main() {
             maxRequestsPerCrawl: input.maxItems,
             maxConcurrency: 1,
             maxRequestRetries: 1,
-            navigationTimeoutSecs: 60, // Increase timeout to 60 seconds
+            navigationTimeoutSecs: 60,
             browserPoolOptions: {
                 useFingerprints: true,
                 fingerprintOptions: {
@@ -47,10 +47,13 @@ async function main() {
                         '--disable-web-security',
                         '--disable-features=IsolateOrigins,site-per-process',
                         '--disable-blink-features=AutomationControlled',
+                        '--disable-site-isolation-trials',
+                        '--disable-features=BlockInsecurePrivateNetworkRequests',
+                        '--disable-features=IsolateOrigins',
+                        '--disable-features=site-per-process',
                     ],
                 } as LaunchOptions,
             },
-            // Add a preNavigation hook to handle cookies and other pre-request setup
             preNavigationHooks: [
                 async (crawlingContext) => {
                     const { page, request } = crawlingContext;
@@ -69,6 +72,7 @@ async function main() {
                         'Sec-Fetch-Mode': 'navigate',
                         'Sec-Fetch-Site': 'none',
                         'Sec-Fetch-User': '?1',
+                        'Cache-Control': 'max-age=0',
                     });
 
                     // Add a random delay between 5-15 seconds
@@ -79,7 +83,7 @@ async function main() {
                         // Use a more lenient navigation strategy
                         await page.goto(request.url, {
                             waitUntil: ['domcontentloaded', 'networkidle2'],
-                            timeout: 60000 // 60 seconds timeout
+                            timeout: 60000
                         });
 
                         // Wait for a short time to let any dynamic content load
