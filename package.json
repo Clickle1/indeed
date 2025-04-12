@@ -4,7 +4,7 @@
   "description": "A web scraper for Indeed.com job listings",
   "main": "dist/main.js",
   "scripts": {
-    "start": "node dist/main.js",
+    "start": "npm run build && node dist/main.js",
     "build": "tsc",
     "dev": "ts-node main.ts"
   },
