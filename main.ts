@@ -33,10 +33,33 @@ async function main() {
         // Initialize the crawler
         const crawler = new CheerioCrawler({
             proxyConfiguration,
-            maxConcurrency: 3,
+            maxConcurrency: 1,
             maxRequestRetries: 3,
             requestHandlerTimeoutSecs: 60,
             navigationTimeoutSecs: 60,
+            additionalMimeTypes: ['text/plain'],
+            preNavigationHooks: [
+                async ({ request, session, proxyInfo }) => {
+                    // Add delay between requests
+                    await new Promise(resolve => setTimeout(resolve, 5000 + Math.random() * 5000));
+                    
+                    // Set headers to look more like a browser
+                    request.headers = {
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'Connection': 'keep-alive',
+                        'Upgrade-Insecure-Requests': '1',
+                        'Sec-Fetch-Dest': 'document',
+                        'Sec-Fetch-Mode': 'navigate',
+                        'Sec-Fetch-Site': 'none',
+                        'Sec-Fetch-User': '?1',
+                        'Cache-Control': 'max-age=0',
+                        'DNT': '1',
+                    };
+                }
+            ],
             async requestHandler({ request, $, log }) {
                 const { url } = request;
 
