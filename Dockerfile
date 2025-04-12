@@ -1,4 +1,4 @@
-FROM apify/actor-node:20
+FROM apify/actor-node-puppeteer-chrome:20
 
 # Install global dependencies
 RUN npm install -g typescript
