@@ -9,21 +9,29 @@ async function main() {
         console.log('Actor initialized successfully');
 
         interface Input {
-            searchQuery: string;
+            position: string;
+            country: string;
             location: string;
-            maxPages?: number;
+            maxItems?: number;
+            parseCompanyDetails?: boolean;
+            saveOnlyUniqueItems?: boolean;
+            followApplyRedirects?: boolean;
         }
 
         const input = await Actor.getInput<Input>();
         console.log('Input received:', input);
         
         const { 
-            searchQuery = 'web developer', 
+            position = 'web developer', 
+            country = 'UK',
             location = 'London', 
-            maxPages = 5
+            maxItems = 50,
+            parseCompanyDetails = false,
+            saveOnlyUniqueItems = true,
+            followApplyRedirects = false
         } = input ?? {};
 
-        console.log('Using parameters:', { searchQuery, location, maxPages });
+        console.log('Using parameters:', { position, country, location, maxItems, parseCompanyDetails, saveOnlyUniqueItems, followApplyRedirects });
 
         // Initialize proxy configuration
         const proxyConfiguration = await Actor.createProxyConfiguration({
@@ -37,7 +45,7 @@ async function main() {
         console.log('Proxy configuration initialized successfully');
 
         // Create a URL for the search
-        const searchUrl = `https://uk.indeed.com/jobs?q=${encodeURIComponent(searchQuery)}&l=${encodeURIComponent(location)}`;
+        const searchUrl = `https://uk.indeed.com/jobs?q=${encodeURIComponent(position)}&l=${encodeURIComponent(location)}`;
         console.log('Search URL:', searchUrl);
 
         // Function to extract job data from HTML
@@ -192,7 +200,7 @@ async function main() {
             let currentUrl: string | null = searchUrl;
             let totalItems = 0;
 
-            while (currentPage <= maxPages && currentUrl) {
+            while (currentPage <= 10 && currentUrl && totalItems < maxItems) {
                 try {
                     console.log(`Processing page ${currentPage}: ${currentUrl}`);
                     
