@@ -226,6 +226,63 @@ async function main() {
             return null;
         }
 
+        // Function to handle Cloudflare challenges
+        async function handleCloudflareChallenge(html: string, url: string, proxyUrl: string): Promise<string> {
+            console.log('Handling Cloudflare challenge');
+            
+            // Check if we got a Cloudflare challenge page
+            if (html.includes('Security Check') || html.includes('cf-mitigated')) {
+                console.log('Detected Cloudflare challenge page');
+                
+                // Wait longer before retrying
+                const delay = Math.random() * 10000 + 10000;
+                console.log(`Waiting ${Math.round(delay/1000)} seconds before retry`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                
+                // Get a new proxy URL
+                const newProxyUrl = await proxyConfiguration?.newUrl();
+                console.log('Using new proxy URL:', newProxyUrl);
+                
+                // Retry the request with new proxy
+                const retryResponse = await gotScraping.get(url, {
+                    proxyUrl: newProxyUrl,
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                        'Accept-Language': 'en-GB,en;q=0.9',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'Connection': 'keep-alive',
+                        'Upgrade-Insecure-Requests': '1',
+                        'Sec-Fetch-Dest': 'document',
+                        'Sec-Fetch-Mode': 'navigate',
+                        'Sec-Fetch-Site': 'none',
+                        'Sec-Fetch-User': '?1',
+                        'Cache-Control': 'max-age=0',
+                        'DNT': '1',
+                        'sec-ch-ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+                        'sec-ch-ua-mobile': '?0',
+                        'sec-ch-ua-platform': '"Windows"',
+                        'Sec-CH-UA': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+                        'Sec-CH-UA-Mobile': '?0',
+                        'Sec-CH-UA-Platform': '"Windows"',
+                        'Sec-CH-UA-Bitness': '"64"',
+                        'Sec-CH-UA-Arch': '"x86"',
+                        'Sec-CH-UA-Full-Version': '"122.0.0.0"',
+                        'Sec-CH-UA-Full-Version-List': '"Chromium";v="122.0.0.0", "Not(A:Brand";v="24.0.0.0", "Google Chrome";v="122.0.0.0"',
+                        'Sec-CH-UA-Model': '""',
+                        'Sec-CH-UA-Platform-Version': '"10.0.0"'
+                    },
+                    timeout: {
+                        request: 30000
+                    }
+                });
+                
+                return retryResponse.body;
+            }
+            
+            return html;
+        }
+
         // Main scraping function
         async function scrapeJobs() {
             console.log('Starting job scraping');
@@ -252,9 +309,9 @@ async function main() {
                     const response = await gotScraping.get(currentUrl, {
                         proxyUrl,
                         headers: {
-                            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                            'Accept-Language': 'en-GB,en;q=0.5',
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                            'Accept-Language': 'en-GB,en;q=0.9',
                             'Accept-Encoding': 'gzip, deflate, br',
                             'Connection': 'keep-alive',
                             'Upgrade-Insecure-Requests': '1',
@@ -264,6 +321,18 @@ async function main() {
                             'Sec-Fetch-User': '?1',
                             'Cache-Control': 'max-age=0',
                             'DNT': '1',
+                            'sec-ch-ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+                            'sec-ch-ua-mobile': '?0',
+                            'sec-ch-ua-platform': '"Windows"',
+                            'Sec-CH-UA': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+                            'Sec-CH-UA-Mobile': '?0',
+                            'Sec-CH-UA-Platform': '"Windows"',
+                            'Sec-CH-UA-Bitness': '"64"',
+                            'Sec-CH-UA-Arch': '"x86"',
+                            'Sec-CH-UA-Full-Version': '"122.0.0.0"',
+                            'Sec-CH-UA-Full-Version-List': '"Chromium";v="122.0.0.0", "Not(A:Brand";v="24.0.0.0", "Google Chrome";v="122.0.0.0"',
+                            'Sec-CH-UA-Model': '""',
+                            'Sec-CH-UA-Platform-Version': '"10.0.0"'
                         },
                         timeout: {
                             request: 30000
@@ -271,7 +340,10 @@ async function main() {
                     });
 
                     console.log('Received response from search page');
-                    const html = response.body;
+                    let html = response.body;
+                    
+                    // Handle Cloudflare challenge if needed
+                    html = await handleCloudflareChallenge(html, currentUrl, proxyUrl);
                     
                     // Debug HTML content
                     console.log('Response status:', response.statusCode);
