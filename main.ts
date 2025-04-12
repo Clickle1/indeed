@@ -68,76 +68,88 @@ async function main() {
                 remote: false,
             };
 
-            // Extract title
-            const titleMatch = html.match(/<h1[^>]*class="jobsearch-JobInfoHeader-title"[^>]*>(.*?)<\/h1>/);
-            if (titleMatch) {
-                jobData.title = titleMatch[1].trim();
-            }
+            // Try to extract from detailed view first
+            const detailedViewMatch = html.match(/<div class="jobsearch-FederatedViewJob">/);
+            if (detailedViewMatch) {
+                console.log('Found detailed view structure');
+                // Extract title from detailed view
+                const titleMatch = html.match(/<h2[^>]*class="jobsearch-JobInfoHeader-title"[^>]*>(.*?)<\/h2>/);
+                if (titleMatch) {
+                    jobData.title = titleMatch[1].replace(/<span[^>]*>.*?<\/span>/g, '').trim();
+                }
 
-            // Extract company
-            const companyMatch = html.match(/<div[^>]*data-company-name="true"[^>]*>(.*?)<\/div>/);
-            if (companyMatch) {
-                jobData.company = companyMatch[1].trim();
-            }
+                // Extract company from detailed view
+                const companyMatch = html.match(/<div[^>]*data-company-name="true"[^>]*>(.*?)<\/div>/);
+                if (companyMatch) {
+                    jobData.company = companyMatch[1].trim();
+                }
 
-            // Extract location
-            const locationMatch = html.match(/<div[^>]*data-testid="job-location"[^>]*>(.*?)<\/div>/);
-            if (locationMatch) {
-                jobData.location = locationMatch[1].trim();
-            }
+                // Extract location from detailed view
+                const locationMatch = html.match(/<div[^>]*data-testid="inlineHeader-companyLocation"[^>]*>(.*?)<\/div>/);
+                if (locationMatch) {
+                    jobData.location = locationMatch[1].replace(/<span[^>]*>.*?<\/span>/g, '').trim();
+                }
 
-            // Extract salary
-            const salaryMatch = html.match(/<div[^>]*data-testid="job-salary"[^>]*>(.*?)<\/div>/);
-            if (salaryMatch) {
-                jobData.salary = salaryMatch[1].trim();
-            }
+                // Extract salary from detailed view
+                const salaryMatch = html.match(/<div[^>]*data-testid="£[^"]*-tile"[^>]*>(.*?)<\/div>/);
+                if (salaryMatch) {
+                    jobData.salary = salaryMatch[1].replace(/<[^>]*>/g, '').trim();
+                }
 
-            // Extract description
-            const descriptionMatch = html.match(/<div[^>]*id="jobDescriptionText"[^>]*>(.*?)<\/div>/);
-            if (descriptionMatch) {
-                jobData.description = descriptionMatch[1].trim();
-            }
+                // Extract job type from detailed view
+                const jobTypeMatch = html.match(/<div[^>]*data-testid="[^"]*-tile"[^>]*>(.*?)<\/div>/g);
+                if (jobTypeMatch && jobTypeMatch.length > 1) {
+                    jobData.jobType = jobTypeMatch[1].replace(/<[^>]*>/g, '').trim();
+                }
 
-            // Extract job type
-            const jobTypeMatch = html.match(/<div[^>]*data-testid="job-type"[^>]*>(.*?)<\/div>/);
-            if (jobTypeMatch) {
-                jobData.jobType = jobTypeMatch[1].trim();
-            }
+                // Extract description from detailed view
+                const descriptionMatch = html.match(/<div[^>]*id="jobDescriptionText"[^>]*>(.*?)<\/div>/);
+                if (descriptionMatch) {
+                    jobData.description = descriptionMatch[1].trim();
+                }
 
-            // Extract posted date
-            const postedDateMatch = html.match(/<div[^>]*data-testid="job-posted-date"[^>]*>(.*?)<\/div>/);
-            if (postedDateMatch) {
-                jobData.postedDate = postedDateMatch[1].trim();
-            }
+                // Extract company rating from detailed view
+                const ratingMatch = html.match(/<span[^>]*aria-hidden="true"[^>]*>(.*?)<\/span>/);
+                if (ratingMatch) {
+                    jobData.companyRating = ratingMatch[1].trim();
+                }
 
-            // Extract remote status
-            const remoteMatch = html.match(/<div[^>]*data-testid="remote-job"[^>]*>(.*?)<\/div>/);
-            if (remoteMatch) {
-                jobData.remote = true;
-            }
+                // Check for remote status
+                if (html.includes('Remote') || html.includes('remote')) {
+                    jobData.remote = true;
+                }
+            } else {
+                console.log('Using job card structure');
+                // Extract from job card structure
+                const titleMatch = html.match(/<span[^>]*id="jobTitle-[^"]*"[^>]*>(.*?)<\/span>/);
+                if (titleMatch) {
+                    jobData.title = titleMatch[1].trim();
+                }
 
-            // Extract apply URL
-            const applyUrlMatch = html.match(/<a[^>]*data-testid="apply-button"[^>]*href="([^"]*)"[^>]*>/);
-            if (applyUrlMatch) {
-                jobData.applyUrl = new URL(applyUrlMatch[1], 'https://uk.indeed.com').toString();
-            }
+                const companyMatch = html.match(/<span[^>]*data-testid="company-name"[^>]*>(.*?)<\/span>/);
+                if (companyMatch) {
+                    jobData.company = companyMatch[1].trim();
+                }
 
-            // Extract company URL
-            const companyUrlMatch = html.match(/<a[^>]*data-testid="company-link"[^>]*href="([^"]*)"[^>]*>/);
-            if (companyUrlMatch) {
-                jobData.companyUrl = new URL(companyUrlMatch[1], 'https://uk.indeed.com').toString();
-            }
+                const locationMatch = html.match(/<div[^>]*data-testid="text-location"[^>]*>(.*?)<\/div>/);
+                if (locationMatch) {
+                    jobData.location = locationMatch[1].trim();
+                }
 
-            // Extract company rating
-            const companyRatingMatch = html.match(/<div[^>]*data-testid="company-rating"[^>]*>(.*?)<\/div>/);
-            if (companyRatingMatch) {
-                jobData.companyRating = companyRatingMatch[1].trim();
-            }
+                const salaryMatch = html.match(/<div[^>]*data-testid="attribute_snippet_testid"[^>]*>(.*?)<\/div>/);
+                if (salaryMatch) {
+                    jobData.salary = salaryMatch[1].trim();
+                }
 
-            // Extract company reviews
-            const companyReviewsMatch = html.match(/<div[^>]*data-testid="company-reviews"[^>]*>(.*?)<\/div>/);
-            if (companyReviewsMatch) {
-                jobData.companyReviews = companyReviewsMatch[1].trim();
+                const jobTypeMatch = html.match(/<div[^>]*data-testid="attribute_snippet_testid"[^>]*>(.*?)<\/div>/g);
+                if (jobTypeMatch && jobTypeMatch.length > 1) {
+                    jobData.jobType = jobTypeMatch[1].replace(/<[^>]*>/g, '').trim();
+                }
+
+                const ratingMatch = html.match(/<span[^>]*aria-hidden="true"[^>]*>(.*?)<\/span>/);
+                if (ratingMatch) {
+                    jobData.companyRating = ratingMatch[1].trim();
+                }
             }
 
             console.log('Extracted job data:', jobData);
@@ -151,12 +163,9 @@ async function main() {
             
             // Try different patterns for job links
             const patterns = [
-                /<a[^>]*data-jk="([^"]*)"[^>]*>/g,
-                /<a[^>]*href="\/jobs\/view\?jk=([^"]*)"[^>]*>/g,
-                /<a[^>]*href="\/rc\/clk\?jk=([^"]*)"[^>]*>/g,
-                /<a[^>]*href="\/pagead\/clk\?mo=([^"]*)"[^>]*>/g,
                 /<a[^>]*class="jcs-JobTitle"[^>]*href="([^"]*)"[^>]*>/g,
-                /<a[^>]*class="tapItem"[^>]*href="([^"]*)"[^>]*>/g
+                /<a[^>]*data-jk="([^"]*)"[^>]*>/g,
+                /<a[^>]*href="\/pagead\/clk\?mo=([^"]*)"[^>]*>/g
             ];
 
             for (const pattern of patterns) {
@@ -189,12 +198,9 @@ async function main() {
         function extractNextPageUrl(html: string): string | null {
             console.log('Extracting next page URL');
             const patterns = [
-                /<a[^>]*data-testid="pagination-page-next"[^>]*href="([^"]*)"[^>]*>/,
                 /<a[^>]*aria-label="Next Page"[^>]*href="([^"]*)"[^>]*>/,
-                /<a[^>]*rel="next"[^>]*href="([^"]*)"[^>]*>/,
                 /<a[^>]*class="pagination-next"[^>]*href="([^"]*)"[^>]*>/,
-                /<a[^>]*class="np"[^>]*href="([^"]*)"[^>]*>/,
-                /<a[^>]*class="pagination-next"[^>]*href="([^"]*)"[^>]*>/
+                /<a[^>]*class="np"[^>]*href="([^"]*)"[^>]*>/
             ];
 
             for (const pattern of patterns) {
