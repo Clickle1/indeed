@@ -120,35 +120,42 @@ async function main() {
                 }
             } else {
                 console.log('Using job card structure');
-                // Extract from job card structure
-                const titleMatch = html.match(/<span[^>]*id="jobTitle-[^"]*"[^>]*>(.*?)<\/span>/);
+                // Extract from job card structure using UK Indeed patterns
+                const titleMatch = html.match(/<h2[^>]*class="jobTitle"[^>]*><span[^>]*>(.*?)<\/span><\/h2>/);
                 if (titleMatch) {
                     jobData.title = titleMatch[1].trim();
                 }
 
-                const companyMatch = html.match(/<span[^>]*data-testid="company-name"[^>]*>(.*?)<\/span>/);
+                const companyMatch = html.match(/<span[^>]*class="companyName"[^>]*>(.*?)<\/span>/);
                 if (companyMatch) {
                     jobData.company = companyMatch[1].trim();
                 }
 
-                const locationMatch = html.match(/<div[^>]*data-testid="text-location"[^>]*>(.*?)<\/div>/);
+                const locationMatch = html.match(/<div[^>]*class="companyLocation"[^>]*>(.*?)<\/div>/);
                 if (locationMatch) {
                     jobData.location = locationMatch[1].trim();
                 }
 
-                const salaryMatch = html.match(/<div[^>]*data-testid="attribute_snippet_testid"[^>]*>(.*?)<\/div>/);
+                const salaryMatch = html.match(/<div[^>]*class="salary-snippet"[^>]*>(.*?)<\/div>/);
                 if (salaryMatch) {
                     jobData.salary = salaryMatch[1].trim();
                 }
 
-                const jobTypeMatch = html.match(/<div[^>]*data-testid="attribute_snippet_testid"[^>]*>(.*?)<\/div>/g);
-                if (jobTypeMatch && jobTypeMatch.length > 1) {
+                // Extract job type from metadata
+                const jobTypeMatch = html.match(/<div[^>]*class="metadata"[^>]*>(.*?)<\/div>/);
+                if (jobTypeMatch) {
                     jobData.jobType = jobTypeMatch[1].replace(/<[^>]*>/g, '').trim();
                 }
 
-                const ratingMatch = html.match(/<span[^>]*aria-hidden="true"[^>]*>(.*?)<\/span>/);
-                if (ratingMatch) {
-                    jobData.companyRating = ratingMatch[1].trim();
+                // Extract posted date
+                const dateMatch = html.match(/<span[^>]*class="date"[^>]*>(.*?)<\/span>/);
+                if (dateMatch) {
+                    jobData.postedDate = dateMatch[1].trim();
+                }
+
+                // Check for remote status in job card
+                if (html.includes('Remote') || html.includes('remote') || html.includes('Work from home')) {
+                    jobData.remote = true;
                 }
             }
 
@@ -161,15 +168,15 @@ async function main() {
             console.log('Extracting job links from HTML');
             const jobLinks: string[] = [];
             
-            // Try different patterns for job links
+            // Try different patterns for job links, focusing on tapItem class
             const patterns = [
+                /<a[^>]*class="tapItem"[^>]*href="([^"]*)"[^>]*>/g,
                 /<a[^>]*class="jcs-JobTitle"[^>]*href="([^"]*)"[^>]*>/g,
                 /<a[^>]*data-jk="([^"]*)"[^>]*>/g,
                 /<a[^>]*href="\/pagead\/clk\?mo=([^"]*)"[^>]*>/g,
                 /<a[^>]*href="\/viewjob\?jk=([^"]*)"[^>]*>/g,
                 /<a[^>]*href="\/rc\/clk\?jk=([^"]*)"[^>]*>/g,
-                /<a[^>]*class="jobTitle"[^>]*href="([^"]*)"[^>]*>/g,
-                /<a[^>]*class="tapItem"[^>]*href="([^"]*)"[^>]*>/g
+                /<a[^>]*class="jobTitle"[^>]*href="([^"]*)"[^>]*>/g
             ];
 
             for (const pattern of patterns) {
