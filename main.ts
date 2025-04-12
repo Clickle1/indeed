@@ -22,7 +22,7 @@ async function main() {
         const crawler = new PuppeteerCrawler({
             requestHandler: router,
             maxRequestsPerCrawl: input.maxItems,
-            maxConcurrency: 1, // Single request at a time
+            maxConcurrency: 1,
             maxRequestRetries: 1,
             browserPoolOptions: {
                 useFingerprints: true,
@@ -33,13 +33,39 @@ async function main() {
                     },
                 },
             },
+            launchContext: {
+                launchOptions: {
+                    headless: true,
+                    args: [
+                        '--no-sandbox',
+                        '--disable-setuid-sandbox',
+                        '--disable-dev-shm-usage',
+                        '--disable-accelerated-2d-canvas',
+                        '--disable-gpu',
+                        '--window-size=1920,1080',
+                        '--disable-web-security',
+                        '--disable-features=IsolateOrigins,site-per-process',
+                    ],
+                },
+            },
             // Add a preNavigation hook to handle cookies and other pre-request setup
             preNavigationHooks: [
                 async (crawlingContext) => {
                     const { page } = crawlingContext;
-                    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+                    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+                    await page.setExtraHTTPHeaders({
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'Connection': 'keep-alive',
+                        'Upgrade-Insecure-Requests': '1',
+                        'Sec-Fetch-Dest': 'document',
+                        'Sec-Fetch-Mode': 'navigate',
+                        'Sec-Fetch-Site': 'none',
+                        'Sec-Fetch-User': '?1',
+                    });
                     // Add a delay between requests
-                    await new Promise(resolve => setTimeout(resolve, 10000));
+                    await new Promise(resolve => setTimeout(resolve, 15000));
                 },
             ],
         });
