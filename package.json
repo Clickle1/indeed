@@ -11,7 +11,7 @@
   "dependencies": {
     "apify": "^3.0.0",
     "crawlee": "^3.0.0",
-    "puppeteer": "^19.0.0"
+    "puppeteer": "^22.8.1"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",

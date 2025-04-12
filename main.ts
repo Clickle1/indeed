@@ -30,7 +30,7 @@ const crawler = new PuppeteerCrawler({
     maxConcurrency: 5, // Limit concurrent requests to avoid overwhelming the server
     launchContext: {
         launchOptions: {
-            headless: true,
+            headless: 'new',
             args: [
                 '--disable-gpu',
                 '--no-sandbox',
