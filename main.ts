@@ -115,13 +115,35 @@ async function main() {
                             throw new Error('CAPTCHA detected');
                         }
 
-                        // Check if we're on the main page
-                        const isMainPage = await page.evaluate(() => {
-                            return document.querySelector('div[class*="jobsearch"]') !== null;
+                        // Check if we're on the main page with more robust selectors
+                        const pageContent = await page.evaluate(() => {
+                            const selectors = [
+                                'div[class*="jobsearch"]',
+                                'div[class*="job_seen_beacon"]',
+                                'div[class*="jobsearch-ResultsList"]',
+                                'div[class*="jobsearch-SerpJobCard"]',
+                                'div[class*="jobsearch-LeftPane"]',
+                                'div[class*="jobsearch-RightPane"]'
+                            ];
+                            
+                            // Check if any of the selectors exist
+                            const hasJobElements = selectors.some(selector => 
+                                document.querySelector(selector) !== null
+                            );
+
+                            // Get the page title and URL for debugging
+                            return {
+                                hasJobElements,
+                                title: document.title,
+                                url: window.location.href,
+                                bodyText: document.body.innerText.substring(0, 200) // First 200 chars for debugging
+                            };
                         });
 
-                        if (!isMainPage) {
-                            console.log('Not on the main job search page. Possible redirection or error page.');
+                        console.log('Page content check:', pageContent);
+
+                        if (!pageContent.hasJobElements) {
+                            console.log('Not on the main job search page. Page details:', pageContent);
                             throw new Error('Not on main job search page');
                         }
                     } catch (error) {
