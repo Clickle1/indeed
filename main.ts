@@ -25,6 +25,7 @@ async function main() {
             maxRequestsPerCrawl: input.maxItems,
             maxConcurrency: 1,
             maxRequestRetries: 1,
+            navigationTimeoutSecs: 60, // Increase timeout to 60 seconds
             browserPoolOptions: {
                 useFingerprints: true,
                 fingerprintOptions: {
@@ -52,7 +53,7 @@ async function main() {
             // Add a preNavigation hook to handle cookies and other pre-request setup
             preNavigationHooks: [
                 async (crawlingContext) => {
-                    const { page } = crawlingContext;
+                    const { page, request } = crawlingContext;
                     
                     // Set a modern user agent
                     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
@@ -74,19 +75,40 @@ async function main() {
                     const delay = Math.floor(Math.random() * 10000) + 5000;
                     await new Promise(resolve => setTimeout(resolve, delay));
 
-                    // Check for CAPTCHA after navigation
-                    await page.waitForNavigation({ waitUntil: 'networkidle0' });
-                    
-                    // Check if we're on a CAPTCHA page
-                    const isCaptcha = await page.evaluate(() => {
-                        return document.querySelector('form[action*="verify"]') !== null ||
-                               document.querySelector('iframe[src*="captcha"]') !== null ||
-                               document.querySelector('div[class*="captcha"]') !== null;
-                    });
+                    try {
+                        // Use a more lenient navigation strategy
+                        await page.goto(request.url, {
+                            waitUntil: ['domcontentloaded', 'networkidle2'],
+                            timeout: 60000 // 60 seconds timeout
+                        });
 
-                    if (isCaptcha) {
-                        console.log('CAPTCHA detected. Please solve it manually or use a different approach.');
-                        throw new Error('CAPTCHA detected');
+                        // Wait for a short time to let any dynamic content load
+                        await new Promise(resolve => setTimeout(resolve, 5000));
+
+                        // Check if we're on a CAPTCHA page
+                        const isCaptcha = await page.evaluate(() => {
+                            return document.querySelector('form[action*="verify"]') !== null ||
+                                   document.querySelector('iframe[src*="captcha"]') !== null ||
+                                   document.querySelector('div[class*="captcha"]') !== null;
+                        });
+
+                        if (isCaptcha) {
+                            console.log('CAPTCHA detected. Please solve it manually or use a different approach.');
+                            throw new Error('CAPTCHA detected');
+                        }
+
+                        // Check if we're on the main page
+                        const isMainPage = await page.evaluate(() => {
+                            return document.querySelector('div[class*="jobsearch"]') !== null;
+                        });
+
+                        if (!isMainPage) {
+                            console.log('Not on the main job search page. Possible redirection or error page.');
+                            throw new Error('Not on main job search page');
+                        }
+                    } catch (error) {
+                        console.error('Navigation error:', error);
+                        throw error;
                     }
                 },
             ],
