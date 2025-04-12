@@ -1,58 +1,56 @@
 {
-    "title": "Indeed Job Scraper",
+    "title": "Input schema",
     "type": "object",
     "schemaVersion": 1,
     "properties": {
         "position": {
-            "title": "Job Position",
+            "title": "Position",
             "type": "string",
-            "description": "The job position to search for",
+            "description": "The job title or keywords to search for",
             "editor": "textfield",
-            "prefill": "web developer"
+            "default": "web developer"
         },
         "country": {
             "title": "Country",
             "type": "string",
-            "description": "The country to search in (e.g., US, UK, CA)",
+            "description": "The country to search in",
             "editor": "textfield",
-            "prefill": "US"
+            "default": "UK"
         },
         "location": {
             "title": "Location",
             "type": "string",
-            "description": "The city or area to search in",
+            "description": "The location to search in",
             "editor": "textfield",
-            "prefill": "San Francisco"
+            "default": "London"
         },
         "maxItems": {
             "title": "Maximum Items",
             "type": "integer",
-            "description": "Maximum number of job listings to scrape",
+            "description": "Maximum number of items to scrape",
             "editor": "number",
-            "prefill": 50,
-            "minimum": 1,
-            "maximum": 1000
+            "default": 50
         },
         "parseCompanyDetails": {
             "title": "Parse Company Details",
             "type": "boolean",
-            "description": "Whether to scrape company details",
-            "editor": "checkbox",
-            "prefill": false
+            "description": "Whether to parse company details",
+            "editor": "boolean",
+            "default": false
         },
         "saveOnlyUniqueItems": {
             "title": "Save Only Unique Items",
             "type": "boolean",
-            "description": "Whether to save only unique job listings",
-            "editor": "checkbox",
-            "prefill": true
+            "description": "Whether to save only unique items",
+            "editor": "boolean",
+            "default": true
         },
         "followApplyRedirects": {
             "title": "Follow Apply Redirects",
             "type": "boolean",
-            "description": "Whether to follow application redirects",
-            "editor": "checkbox",
-            "prefill": false
+            "description": "Whether to follow apply redirects",
+            "editor": "boolean",
+            "default": false
         }
     },
     "required": ["position", "country", "location"]
