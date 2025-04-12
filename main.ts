@@ -165,7 +165,11 @@ async function main() {
             const patterns = [
                 /<a[^>]*class="jcs-JobTitle"[^>]*href="([^"]*)"[^>]*>/g,
                 /<a[^>]*data-jk="([^"]*)"[^>]*>/g,
-                /<a[^>]*href="\/pagead\/clk\?mo=([^"]*)"[^>]*>/g
+                /<a[^>]*href="\/pagead\/clk\?mo=([^"]*)"[^>]*>/g,
+                /<a[^>]*href="\/viewjob\?jk=([^"]*)"[^>]*>/g,
+                /<a[^>]*href="\/rc\/clk\?jk=([^"]*)"[^>]*>/g,
+                /<a[^>]*class="jobTitle"[^>]*href="([^"]*)"[^>]*>/g,
+                /<a[^>]*class="tapItem"[^>]*href="([^"]*)"[^>]*>/g
             ];
 
             for (const pattern of patterns) {
@@ -200,7 +204,10 @@ async function main() {
             const patterns = [
                 /<a[^>]*aria-label="Next Page"[^>]*href="([^"]*)"[^>]*>/,
                 /<a[^>]*class="pagination-next"[^>]*href="([^"]*)"[^>]*>/,
-                /<a[^>]*class="np"[^>]*href="([^"]*)"[^>]*>/
+                /<a[^>]*class="np"[^>]*href="([^"]*)"[^>]*>/,
+                /<a[^>]*data-testid="pagination-page-next"[^>]*href="([^"]*)"[^>]*>/,
+                /<a[^>]*class="pagination-list"[^>]*href="([^"]*)"[^>]*>/,
+                /<a[^>]*class="pagination-link"[^>]*href="([^"]*)"[^>]*>/
             ];
 
             for (const pattern of patterns) {
@@ -265,6 +272,13 @@ async function main() {
 
                     console.log('Received response from search page');
                     const html = response.body;
+                    
+                    // Debug HTML content
+                    console.log('Response status:', response.statusCode);
+                    console.log('Response headers:', response.headers);
+                    console.log('HTML length:', html.length);
+                    console.log('First 500 chars of HTML:', html.substring(0, 500));
+                    console.log('Last 500 chars of HTML:', html.substring(html.length - 500));
 
                     // Extract job links
                     const jobLinks = extractJobLinks(html);
