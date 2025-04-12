@@ -29,18 +29,13 @@ async function main() {
         requestHandler: router,
         maxRequestsPerCrawl: input.maxItems,
         maxConcurrency: 5, // Limit concurrent requests to avoid overwhelming the server
-        launchContext: {
-            launchOptions: {
-                headless: true,
-                args: [
-                    '--disable-gpu',
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-accelerated-2d-canvas',
-                    '--disable-infobars',
-                    '--window-size=1920,1080',
-                ],
+        browserPoolOptions: {
+            useFingerprints: true,
+            fingerprintOptions: {
+                fingerprintGeneratorOptions: {
+                    browsers: ['chrome'],
+                    operatingSystems: ['linux'],
+                },
             },
         },
         // Add a preNavigation hook to handle cookies and other pre-request setup
