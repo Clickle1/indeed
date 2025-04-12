@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A web scraper for Indeed.com job listings",
   "main": "dist/main.js",
+  "type": "module",
   "scripts": {
     "start": "npm run build && node dist/main.js",
     "build": "tsc",
@@ -11,7 +12,7 @@
   "dependencies": {
     "apify": "^3.0.0",
     "crawlee": "^3.0.0",
-    "puppeteer": "^22.8.1"
+    "puppeteer": "^21.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
